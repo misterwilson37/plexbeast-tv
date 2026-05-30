@@ -7,18 +7,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
-    /* =============================================
-       CONFIGURATION NOTE:
-       Set TUNARR_BASE below to your Cloudflare
-       tunnel URL, e.g. https://tv.yourdomain.com
-       ============================================= */
-
     :root {
       --bg: #060608;
       --amber: #ffb347;
       --amber-dim: rgba(255, 179, 71, 0.5);
-      --amber-glow: rgba(255, 179, 71, 0.15);
-      --red: #ff4444;
       --white: #ddddd0;
       --dim: rgba(221, 221, 208, 0.5);
       --overlay: rgba(6, 6, 8, 0.82);
@@ -40,8 +32,7 @@
 
     /* ── VIDEO ── */
     #player {
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       width: 100%; height: 100%;
       object-fit: cover;
       background: #000;
@@ -54,21 +45,15 @@
       pointer-events: none;
       background: repeating-linear-gradient(
         to bottom,
-        transparent 0px,
-        transparent 3px,
-        rgba(0,0,0,0.07) 3px,
-        rgba(0,0,0,0.07) 4px
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
       );
     }
 
     #vignette {
       position: fixed; inset: 0; z-index: 3;
       pointer-events: none;
-      background: radial-gradient(
-        ellipse at 50% 50%,
-        transparent 55%,
-        rgba(0,0,0,0.55) 100%
-      );
+      background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
     }
 
     /* ── STATIC FLASH ── */
@@ -79,11 +64,7 @@
       background: #fff;
       mix-blend-mode: screen;
     }
-
-    #static-overlay.flash {
-      animation: staticFlash 0.35s steps(1) forwards;
-    }
-
+    #static-overlay.flash { animation: staticFlash 0.35s steps(1) forwards; }
     @keyframes staticFlash {
       0%   { opacity: 0.9; background: #888; }
       20%  { opacity: 0.6; background: #444; }
@@ -93,279 +74,216 @@
       100% { opacity: 0; }
     }
 
+    /* ── BUFFERING SPINNER ── */
+    #buffering {
+      position: fixed; inset: 0; z-index: 8;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    #buffering.visible { opacity: 1; }
+    #buffering-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 12px var(--amber-dim);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50%       { opacity: 1;   transform: scale(1.2); }
+    }
+
     /* ── CHANNEL OSD (top-right) ── */
     #channel-osd {
-      position: fixed;
-      top: 1.8rem; right: 2rem;
-      z-index: 20;
-      text-align: right;
-      opacity: 0;
-      transform: translateY(-6px);
+      position: fixed; top: 1.8rem; right: 2rem;
+      z-index: 20; text-align: right;
+      opacity: 0; transform: translateY(-6px);
       transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
     }
-
-    #channel-osd.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
+    #channel-osd.visible { opacity: 1; transform: translateY(0); }
     #osd-number {
       font-family: var(--font-display);
-      font-size: 5rem;
-      line-height: 1;
+      font-size: 5rem; line-height: 1;
       color: var(--amber);
       text-shadow: 0 0 20px var(--amber-dim), 0 0 60px rgba(255,179,71,0.2);
       letter-spacing: 0.05em;
     }
-
     #osd-name {
-      font-size: 0.75rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--dim);
+      font-size: 0.75rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--dim);
       margin-top: 0.2rem;
     }
 
+    /* ── MUTE BADGE ── */
+    #mute-badge {
+      position: fixed; top: 1.8rem; left: 2rem;
+      z-index: 20;
+      font-family: var(--font-display);
+      font-size: 1.4rem; letter-spacing: 0.15em;
+      color: var(--amber);
+      text-shadow: 0 0 12px var(--amber-dim);
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+    }
+    #mute-badge.visible { opacity: 1; }
+
     /* ── INFO BAR (bottom) ── */
     #info-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
       z-index: 20;
       padding: 1rem 2rem 1.2rem;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 2rem;
-      opacity: 0;
-      transform: translateY(8px);
+      background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%);
+      display: flex; align-items: flex-end;
+      justify-content: space-between; gap: 2rem;
+      opacity: 0; transform: translateY(8px);
       transition: opacity 0.3s, transform 0.3s;
       pointer-events: none;
     }
+    #info-bar.visible { opacity: 1; transform: translateY(0); }
 
-    #info-bar.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    #info-left {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
+    #info-left { display: flex; flex-direction: column; gap: 0.3rem; }
 
     #info-channel {
       font-family: var(--font-display);
-      font-size: 1.6rem;
-      color: var(--amber);
+      font-size: 1.6rem; color: var(--amber);
       text-shadow: 0 0 12px var(--amber-dim);
       letter-spacing: 0.1em;
     }
-
     #info-program {
-      font-size: 0.8rem;
-      letter-spacing: 0.12em;
-      color: var(--white);
-      max-width: 60vw;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 0.8rem; letter-spacing: 0.12em;
+      color: var(--white); max-width: 60vw;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #info-program span { color: var(--dim); }
+    #info-episode {
+      font-size: 0.7rem; letter-spacing: 0.1em;
+      color: var(--dim); max-width: 60vw;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    #info-program span {
-      color: var(--dim);
+    /* progress bar */
+    #info-progress {
+      width: min(400px, 50vw);
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      margin-top: 0.5rem;
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    #info-progress-fill {
+      height: 100%; width: 0%;
+      background: var(--amber);
+      box-shadow: 0 0 6px var(--amber-dim);
+      transition: width 1s linear;
+      border-radius: 1px;
+    }
+    #info-time {
+      font-size: 0.65rem; letter-spacing: 0.1em;
+      color: var(--dim); margin-top: 0.3rem;
     }
 
     #info-right {
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      color: var(--dim);
-      text-align: right;
-      line-height: 1.9;
-      text-transform: uppercase;
+      font-size: 0.7rem; letter-spacing: 0.15em;
+      color: var(--dim); text-align: right;
+      line-height: 1.9; text-transform: uppercase;
     }
-
     #info-right kbd {
       display: inline-block;
       background: rgba(255,255,255,0.1);
       border: 1px solid rgba(255,255,255,0.2);
-      padding: 0.05em 0.4em;
-      border-radius: 3px;
-      font-family: var(--font-ui);
-      font-size: inherit;
+      padding: 0.05em 0.4em; border-radius: 3px;
+      font-family: var(--font-ui); font-size: inherit;
       color: var(--white);
     }
 
     /* ── GUIDE OVERLAY ── */
     #guide {
-      position: fixed;
-      inset: 0;
-      z-index: 30;
+      position: fixed; inset: 0; z-index: 30;
       background: var(--overlay);
       backdrop-filter: blur(4px);
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
       transition: opacity 0.25s;
     }
-
-    #guide.visible {
-      opacity: 1;
-      pointer-events: all;
-    }
-
+    #guide.visible { opacity: 1; pointer-events: all; }
     #guide-header {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       justify-content: space-between;
       padding: 1.5rem 2rem 1rem;
       border-bottom: 1px solid rgba(255,179,71,0.2);
       flex-shrink: 0;
     }
-
     #guide-title {
       font-family: var(--font-display);
-      font-size: 2rem;
-      color: var(--amber);
+      font-size: 2rem; color: var(--amber);
       text-shadow: 0 0 20px var(--amber-dim);
       letter-spacing: 0.15em;
     }
-
-    #guide-time {
-      font-size: 0.75rem;
-      letter-spacing: 0.15em;
-      color: var(--dim);
-      text-transform: uppercase;
-    }
-
-    #guide-close-hint {
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      color: var(--dim);
-      text-transform: uppercase;
-    }
-
+    #guide-time { font-size: 0.75rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; }
+    #guide-close-hint { font-size: 0.7rem; letter-spacing: 0.15em; color: var(--dim); text-transform: uppercase; }
     #guide-grid {
-      overflow-y: auto;
-      flex: 1;
+      overflow-y: auto; flex: 1;
       padding: 0.75rem 1rem 2rem;
       scrollbar-width: thin;
       scrollbar-color: var(--amber-dim) transparent;
     }
-
     .guide-row {
-      display: grid;
-      grid-template-columns: 5rem 1fr;
-      gap: 0;
+      display: grid; grid-template-columns: 5rem 1fr;
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      cursor: pointer;
-      transition: background 0.15s;
+      cursor: pointer; transition: background 0.15s;
     }
-
-    .guide-row:hover, .guide-row.active {
-      background: rgba(255,179,71,0.08);
-    }
-
-    .guide-row.active .guide-ch-num {
-      color: var(--amber);
-    }
-
+    .guide-row:hover, .guide-row.active { background: rgba(255,179,71,0.08); }
+    .guide-row.active .guide-ch-num { color: var(--amber); }
     .guide-ch-num {
-      font-family: var(--font-display);
-      font-size: 1.8rem;
-      color: var(--dim);
-      padding: 0.85rem 1rem 0.85rem 0.75rem;
-      text-align: right;
-      align-self: center;
-      letter-spacing: 0.05em;
-      line-height: 1;
-      transition: color 0.15s;
+      font-family: var(--font-display); font-size: 1.8rem;
+      color: var(--dim); padding: 0.85rem 1rem 0.85rem 0.75rem;
+      text-align: right; align-self: center;
+      letter-spacing: 0.05em; line-height: 1; transition: color 0.15s;
     }
-
     .guide-ch-info {
       padding: 0.85rem 1rem;
       border-left: 1px solid rgba(255,255,255,0.07);
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      justify-content: center;
+      display: flex; flex-direction: column; gap: 0.25rem; justify-content: center;
     }
-
-    .guide-ch-name {
-      font-size: 0.8rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--white);
-    }
-
-    .guide-ch-program {
-      font-size: 0.72rem;
-      letter-spacing: 0.05em;
-      color: var(--dim);
-    }
+    .guide-ch-name { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--white); }
+    .guide-ch-program { font-size: 0.72rem; letter-spacing: 0.05em; color: var(--dim); }
 
     /* ── NO SIGNAL ── */
     #no-signal {
-      position: fixed;
-      inset: 0;
-      z-index: 5;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      background: #050505;
+      position: fixed; inset: 0; z-index: 5;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1rem; background: #050505;
     }
-
     #no-signal.visible { display: flex; }
-
     #no-signal-text {
-      font-family: var(--font-display);
-      font-size: 4rem;
-      color: var(--dim);
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      opacity: 0.4;
+      font-family: var(--font-display); font-size: 4rem;
+      color: var(--dim); letter-spacing: 0.2em;
+      text-transform: uppercase; opacity: 0.4;
     }
 
-    /* ── CONFIG NOTICE (shown before streams configured) ── */
+    /* ── CONFIG NOTICE ── */
     #config-notice {
-      position: fixed;
-      top: 50%; left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 40;
-      background: rgba(6,6,8,0.95);
+      z-index: 40; background: rgba(6,6,8,0.95);
       border: 1px solid var(--amber-dim);
-      padding: 2rem 2.5rem;
-      max-width: 520px;
-      text-align: center;
-      display: none;
+      padding: 2rem 2.5rem; max-width: 520px;
+      text-align: center; display: none;
     }
-
     #config-notice.visible { display: block; }
-
     #config-notice h2 {
-      font-family: var(--font-display);
-      font-size: 2rem;
-      color: var(--amber);
-      letter-spacing: 0.15em;
-      margin-bottom: 1rem;
+      font-family: var(--font-display); font-size: 2rem;
+      color: var(--amber); letter-spacing: 0.15em; margin-bottom: 1rem;
     }
-
-    #config-notice p {
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      color: var(--dim);
-      line-height: 1.8;
-    }
-
+    #config-notice p { font-size: 0.78rem; letter-spacing: 0.08em; color: var(--dim); line-height: 1.8; }
     #config-notice code {
-      color: var(--amber);
-      background: rgba(255,179,71,0.1);
-      padding: 0.1em 0.4em;
-      border-radius: 2px;
+      color: var(--amber); background: rgba(255,179,71,0.1);
+      padding: 0.1em 0.4em; border-radius: 2px;
     }
   </style>
 </head>
@@ -376,19 +294,23 @@
   <div id="scanlines"></div>
   <div id="vignette"></div>
   <div id="static-overlay"></div>
+  <div id="buffering"><div id="buffering-dot"></div></div>
   <div id="no-signal"><div id="no-signal-text">No Signal</div></div>
 
-  <!-- Channel OSD -->
   <div id="channel-osd">
     <div id="osd-number">CH 1</div>
     <div id="osd-name">–</div>
   </div>
 
-  <!-- Info Bar -->
+  <div id="mute-badge">⊘ MUTED</div>
+
   <div id="info-bar">
     <div id="info-left">
       <div id="info-channel">CH 1 · Loading…</div>
       <div id="info-program"><span>Now Playing: </span>–</div>
+      <div id="info-episode"></div>
+      <div id="info-progress"><div id="info-progress-fill"></div></div>
+      <div id="info-time"></div>
     </div>
     <div id="info-right">
       <kbd>↑↓</kbd> Change Channel<br>
@@ -397,7 +319,6 @@
     </div>
   </div>
 
-  <!-- Guide Overlay -->
   <div id="guide">
     <div id="guide-header">
       <div id="guide-title">◈ PLEXBEAST TV</div>
@@ -407,151 +328,171 @@
     <div id="guide-grid"></div>
   </div>
 
-  <!-- Config Notice (shown if TUNARR_BASE not set) -->
   <div id="config-notice">
     <h2>Almost Ready</h2>
     <p>
       Set <code>TUNARR_BASE</code> at the top of this file to your
-      Cloudflare tunnel URL, e.g. <code>https://tv.yourdomain.com</code><br><br>
-      Channels will auto-load from your Tunarr instance.<br><br>
-      You can also add manual channels to <code>MANUAL_CHANNELS</code>
-      below if you'd like fallbacks.
+      Cloudflare tunnel URL, e.g. <code>https://plexbeast.misterwilson.org</code><br><br>
+      Channels will auto-load from your Tunarr instance.
     </p>
   </div>
 
   <script>
   // ============================================================
-  //  ▌ CONFIGURATION — Edit these values
+  //  CONFIGURATION
   // ============================================================
 
-  // Your Cloudflare tunnel URL pointing at Tunarr.
-  // Leave empty to see the setup notice.
-  const TUNARR_BASE = 'https://plexbeast.misterwilson.org';
-
-  // Optional: manually define channels as a fallback, or use
-  // these exclusively if TUNARR_BASE is empty.
-  // Format: { number, name, stream }
-  const MANUAL_CHANNELS = [
-    // { number: 1, name: 'Movies',       stream: 'https://tv.yourdomain.com/stream/channel/1.m3u8' },
-    // { number: 2, name: 'Comedy',       stream: 'https://tv.yourdomain.com/stream/channel/2.m3u8' },
-    // { number: 3, name: 'Documentaries',stream: 'https://tv.yourdomain.com/stream/channel/3.m3u8' },
-  ];
-
-  // How long (ms) the channel OSD stays visible after switching
-  const OSD_DURATION = 3000;
-
-  // How long (ms) the info bar stays visible after interaction
-  const INFO_DURATION = 5000;
+  const TUNARR_BASE   = 'https://plexbeast.misterwilson.org';
+  const OSD_DURATION  = 3000;   // ms channel OSD stays visible
+  const INFO_DURATION = 5000;   // ms info bar stays visible
 
   // ============================================================
-  //  ▌ STATE
+  //  STATE
   // ============================================================
 
-  let channels = [];
-  let currentIndex = 0;
-  let hls = null;
-  let osdTimeout = null;
-  let infoTimeout = null;
+  let channels      = [];
+  let currentIndex  = 0;
+  let hls           = null;
+  let currentProg   = null;  // { title, episodeTitle, startTime, duration }
+  let progressTimer = null;
+  let osdTimeout    = null;
+  let infoTimeout   = null;
   let cursorTimeout = null;
-  let guideOpen = false;
-  let programCache = {};
+  let guideOpen     = false;
+  let programCache  = {};
 
-  const player      = document.getElementById('player');
-  const osd         = document.getElementById('channel-osd');
-  const osdNumber   = document.getElementById('osd-number');
-  const osdName     = document.getElementById('osd-name');
-  const infoBar     = document.getElementById('info-bar');
-  const infoCh      = document.getElementById('info-channel');
-  const infoProg    = document.getElementById('info-program');
-  const guide       = document.getElementById('guide');
-  const guideGrid   = document.getElementById('guide-grid');
-  const guideTime   = document.getElementById('guide-time');
-  const noSignal    = document.getElementById('no-signal');
-  const staticEl    = document.getElementById('static-overlay');
-  const configNotice= document.getElementById('config-notice');
+  const player       = document.getElementById('player');
+  const osd          = document.getElementById('channel-osd');
+  const osdNumber    = document.getElementById('osd-number');
+  const osdName      = document.getElementById('osd-name');
+  const muteBadge    = document.getElementById('mute-badge');
+  const buffering    = document.getElementById('buffering');
+  const infoBar      = document.getElementById('info-bar');
+  const infoCh       = document.getElementById('info-channel');
+  const infoProg     = document.getElementById('info-program');
+  const infoEp       = document.getElementById('info-episode');
+  const infoProgFill = document.getElementById('info-progress-fill');
+  const infoTime     = document.getElementById('info-time');
+  const guide        = document.getElementById('guide');
+  const guideGrid    = document.getElementById('guide-grid');
+  const guideTime    = document.getElementById('guide-time');
+  const noSignal     = document.getElementById('no-signal');
+  const staticEl     = document.getElementById('static-overlay');
+  const configNotice = document.getElementById('config-notice');
 
   // ============================================================
-  //  ▌ INIT
+  //  INIT
   // ============================================================
 
   async function init() {
-    if (!TUNARR_BASE && MANUAL_CHANNELS.length === 0) {
-      configNotice.classList.add('visible');
-      return;
-    }
-
+    if (!TUNARR_BASE) { configNotice.classList.add('visible'); return; }
     channels = await loadChannels();
-
-    if (channels.length === 0) {
-      configNotice.classList.add('visible');
-      return;
-    }
-
+    if (channels.length === 0) { configNotice.classList.add('visible'); return; }
     buildGuide();
     tuneToIndex(0, false);
     showInfo();
   }
 
   // ============================================================
-  //  ▌ CHANNEL LOADING
+  //  CHANNEL LOADING
   // ============================================================
 
   async function loadChannels() {
-    let result = [];
-
-    if (TUNARR_BASE) {
-      try {
-        const res = await fetch(`${TUNARR_BASE}/api/channels`);
-        if (res.ok) {
-          const data = await res.json();
-          result = data.map(ch => ({
-            id:     ch.id,
-            number: ch.number,
-            name:   ch.name,
-            stream: `${TUNARR_BASE}/stream/channels/${ch.id}?streamMode=hls`
-          })).sort((a, b) => a.number - b.number);
-        }
-      } catch (e) {
-        console.warn('Could not reach Tunarr API, falling back to manual channels.', e);
-      }
+    try {
+      const res = await fetch(`${TUNARR_BASE}/api/channels`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.map(ch => ({
+        id:     ch.id,
+        number: ch.number,
+        name:   ch.name,
+        // ← Fixed stream URL format
+        stream: `${TUNARR_BASE}/stream/channels/${ch.id}?streamMode=hls`
+      })).sort((a, b) => a.number - b.number);
+    } catch (e) {
+      console.warn('Could not reach Tunarr API:', e);
+      return [];
     }
-
-    if (result.length === 0 && MANUAL_CHANNELS.length > 0) {
-      result = MANUAL_CHANNELS.map(ch => ({ ...ch, id: ch.number }));
-    }
-
-    return result;
   }
 
   // ============================================================
-  //  ▌ PROGRAM INFO
+  //  PROGRAM INFO
   // ============================================================
 
   async function fetchCurrentProgram(channel) {
-    if (!TUNARR_BASE || !channel.id) return null;
-    if (programCache[channel.id]) return programCache[channel.id];
+    const cacheKey = channel.id;
+    if (programCache[cacheKey]) return programCache[cacheKey];
 
     try {
-      const now = new Date();
+      const now  = new Date();
       const soon = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      const url = `${TUNARR_BASE}/api/channels/${channel.id}/programs?from=${now.toISOString()}&to=${soon.toISOString()}`;
-      const res = await fetch(url);
+      const url  = `${TUNARR_BASE}/api/channels/${channel.id}/programs` +
+                   `?from=${now.toISOString()}&to=${soon.toISOString()}`;
+      const res  = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
-      const programs = Array.isArray(data) ? data : (data.programs || []);
-      if (programs.length === 0) return null;
-      const current = programs[0];
-      const info = { title: current.title || current.summary || 'Unknown Program' };
-      programCache[channel.id] = info;
-      setTimeout(() => { delete programCache[channel.id]; }, 5 * 60 * 1000);
+      const list = Array.isArray(data) ? data : (data.programs || []);
+      if (!list.length) return null;
+
+      const p = list[0];
+
+      // Build a rich program object from whatever fields Tunarr provides
+      const info = {
+        title:        p.showTitle || p.title || p.summary || 'Unknown',
+        episodeTitle: p.title !== p.showTitle ? (p.title || '') : '',
+        season:       p.seasonNumber  ?? null,
+        episode:      p.episodeNumber ?? null,
+        startTime:    p.startTime ? new Date(p.startTime).getTime() : now.getTime(),
+        duration:     p.duration  ?? null,   // ms
+      };
+
+      // Cache until the program ends (or 5 min, whichever is sooner)
+      const expiresIn = info.duration
+        ? Math.min(info.startTime + info.duration - now.getTime(), 5 * 60 * 1000)
+        : 5 * 60 * 1000;
+      programCache[cacheKey] = info;
+      setTimeout(() => { delete programCache[cacheKey]; }, Math.max(expiresIn, 30000));
+
       return info;
     } catch (e) {
       return null;
     }
   }
 
+  function formatEpisodeLabel(prog) {
+    if (!prog) return '';
+    const parts = [];
+    if (prog.season  !== null) parts.push(`S${String(prog.season).padStart(2,'0')}`);
+    if (prog.episode !== null) parts.push(`E${String(prog.episode).padStart(2,'0')}`);
+    const seCode = parts.join('');
+    if (seCode && prog.episodeTitle) return `${seCode} · ${prog.episodeTitle}`;
+    if (seCode)                       return seCode;
+    if (prog.episodeTitle)            return prog.episodeTitle;
+    return '';
+  }
+
+  function updateProgress(prog) {
+    clearInterval(progressTimer);
+    infoProgFill.style.width = '0%';
+    infoTime.textContent     = '';
+    if (!prog || !prog.duration) return;
+
+    function tick() {
+      const now     = Date.now();
+      const elapsed = now - prog.startTime;
+      const pct     = Math.min(100, (elapsed / prog.duration) * 100);
+      const remain  = Math.max(0, prog.duration - elapsed);
+      const mins    = Math.floor(remain / 60000);
+      const secs    = Math.floor((remain % 60000) / 1000);
+      infoProgFill.style.width = `${pct}%`;
+      infoTime.textContent     = `${mins}m ${String(secs).padStart(2,'0')}s remaining`;
+    }
+    tick();
+    progressTimer = setInterval(tick, 1000);
+  }
+
   // ============================================================
-  //  ▌ TUNING
+  //  TUNING
   // ============================================================
 
   function tuneToIndex(index, animate = true) {
@@ -563,14 +504,19 @@
     updateOSD(ch);
     updateInfoBar(ch);
     updateGuideHighlight();
+    currentProg = null;
+    infoProgFill.style.width = '0%';
+    infoTime.textContent = '';
 
-    // async fetch program info and update display
     fetchCurrentProgram(ch).then(prog => {
+      currentProg = prog;
       if (prog) {
         infoProg.innerHTML = `<span>Now Playing: </span>${prog.title}`;
-        guideGrid.querySelectorAll('.guide-ch-program').forEach((el, i) => {
-          if (i === currentIndex) el.textContent = prog.title;
-        });
+        infoEp.textContent = formatEpisodeLabel(prog);
+        updateProgress(prog);
+        // update guide row
+        const rows = guideGrid.querySelectorAll('.guide-ch-program');
+        if (rows[currentIndex]) rows[currentIndex].textContent = prog.title;
       }
     });
   }
@@ -579,11 +525,12 @@
   function channelDown() { tuneToIndex(currentIndex - 1); }
 
   // ============================================================
-  //  ▌ HLS PLAYBACK
+  //  HLS PLAYBACK
   // ============================================================
 
   function loadStream(url) {
     noSignal.classList.remove('visible');
+    buffering.classList.add('visible');
 
     if (hls) { hls.destroy(); hls = null; }
 
@@ -591,31 +538,35 @@
       hls = new Hls({
         liveSyncDurationCount: 3,
         maxBufferLength: 30,
-        enableWorker: true
+        enableWorker: true,
+        // faster initial load for live streams
+        manifestLoadingTimeOut: 10000,
+        levelLoadingTimeOut:    10000,
       });
       hls.loadSource(url);
       hls.attachMedia(player);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        player.play().catch(() => {
-          // Autoplay blocked; unmute to unblock
-          player.muted = true;
-          player.play();
-        });
+        buffering.classList.remove('visible');
+        player.play().catch(() => { player.muted = true; player.play(); });
       });
       hls.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) noSignal.classList.add('visible');
+        if (data.fatal) {
+          buffering.classList.remove('visible');
+          noSignal.classList.add('visible');
+        }
       });
     } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari native HLS
       player.src = url;
+      player.oncanplay = () => buffering.classList.remove('visible');
       player.play().catch(() => { player.muted = true; player.play(); });
     } else {
+      buffering.classList.remove('visible');
       noSignal.classList.add('visible');
     }
   }
 
   // ============================================================
-  //  ▌ OSD
+  //  OSD
   // ============================================================
 
   function updateOSD(ch) {
@@ -627,12 +578,13 @@
   }
 
   // ============================================================
-  //  ▌ INFO BAR
+  //  INFO BAR
   // ============================================================
 
   function updateInfoBar(ch) {
     infoCh.textContent = `CH ${ch.number} · ${ch.name.toUpperCase()}`;
     infoProg.innerHTML = `<span>Now Playing: </span>–`;
+    infoEp.textContent = '';
   }
 
   function showInfo() {
@@ -642,20 +594,31 @@
   }
 
   // ============================================================
-  //  ▌ STATIC ANIMATION
+  //  MUTE
+  // ============================================================
+
+  function toggleMute() {
+    player.muted = !player.muted;
+    muteBadge.classList.toggle('visible', player.muted);
+    if (player.muted) {
+      setTimeout(() => muteBadge.classList.remove('visible'), 2000);
+    }
+    showInfo();
+  }
+
+  // ============================================================
+  //  STATIC ANIMATION
   // ============================================================
 
   function triggerStatic() {
     staticEl.classList.remove('flash');
-    void staticEl.offsetWidth; // reflow
+    void staticEl.offsetWidth;
     staticEl.classList.add('flash');
-    staticEl.addEventListener('animationend', () => {
-      staticEl.classList.remove('flash');
-    }, { once: true });
+    staticEl.addEventListener('animationend', () => staticEl.classList.remove('flash'), { once: true });
   }
 
   // ============================================================
-  //  ▌ GUIDE
+  //  GUIDE
   // ============================================================
 
   function buildGuide() {
@@ -670,11 +633,16 @@
           <div class="guide-ch-name">${ch.name}</div>
           <div class="guide-ch-program">–</div>
         </div>`;
-      row.addEventListener('click', () => {
-        tuneToIndex(i);
-        closeGuide();
-      });
+      row.addEventListener('click', () => { tuneToIndex(i); closeGuide(); });
       guideGrid.appendChild(row);
+
+      // async-populate program info in guide
+      fetchCurrentProgram(ch).then(prog => {
+        if (prog) {
+          const el = row.querySelector('.guide-ch-program');
+          if (el) el.textContent = prog.title;
+        }
+      });
     });
   }
 
@@ -689,7 +657,6 @@
     guide.classList.add('visible');
     updateGuideTime();
     document.body.classList.remove('hide-cursor');
-    // scroll active row into view
     const activeRow = guideGrid.querySelector('.guide-row.active');
     if (activeRow) activeRow.scrollIntoView({ block: 'center' });
   }
@@ -700,19 +667,16 @@
     document.body.classList.add('hide-cursor');
   }
 
-  function toggleGuide() {
-    guideOpen ? closeGuide() : openGuide();
-  }
+  function toggleGuide() { guideOpen ? closeGuide() : openGuide(); }
 
   function updateGuideTime() {
-    const now = new Date();
-    guideTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    guideTime.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   setInterval(() => { if (guideOpen) updateGuideTime(); }, 10000);
 
   // ============================================================
-  //  ▌ CURSOR MANAGEMENT
+  //  CURSOR
   // ============================================================
 
   function showCursor() {
@@ -724,25 +688,21 @@
   }
 
   // ============================================================
-  //  ▌ KEYBOARD CONTROLS
+  //  KEYBOARD
   // ============================================================
 
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowUp'   || e.key === 'ArrowRight') { e.preventDefault(); channelUp();    showInfo(); }
     if (e.key === 'ArrowDown' || e.key === 'ArrowLeft')  { e.preventDefault(); channelDown();  showInfo(); }
-    if (e.key === 'g' || e.key === 'G')                  { toggleGuide(); }
-    if (e.key === 'i' || e.key === 'I')                  { showInfo(); updateOSD(channels[currentIndex]); }
-    if (e.key === 'm' || e.key === 'M')                  { player.muted = !player.muted; showInfo(); }
-    if (e.key === 'f' || e.key === 'F')                  { toggleFullscreen(); }
-    if (e.key === 'Escape')                              { if (guideOpen) closeGuide(); }
-    // Number keys: type a channel number (with 1.5s buffer for 2-digit)
-    if (e.key >= '0' && e.key <= '9')                    { handleNumberKey(parseInt(e.key)); }
+    if (e.key === 'g' || e.key === 'G')  { toggleGuide(); }
+    if (e.key === 'i' || e.key === 'I')  { showInfo(); updateOSD(channels[currentIndex]); }
+    if (e.key === 'm' || e.key === 'M')  { toggleMute(); }
+    if (e.key === 'f' || e.key === 'F')  { toggleFullscreen(); }
+    if (e.key === 'Escape')              { if (guideOpen) closeGuide(); }
+    if (e.key >= '0' && e.key <= '9')    { handleNumberKey(parseInt(e.key)); }
   });
 
-  // ── Number key channel selection ──
-  let numBuffer = '';
-  let numTimeout = null;
-
+  let numBuffer = '', numTimeout = null;
   function handleNumberKey(digit) {
     numBuffer += digit;
     clearTimeout(numTimeout);
@@ -754,35 +714,22 @@
     }, 1200);
   }
 
-  // ── Fullscreen ──
   function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
   }
 
-  // ── Mouse wheel channel change ──
   document.addEventListener('wheel', e => {
     e.preventDefault();
     e.deltaY > 0 ? channelDown() : channelUp();
     showInfo();
   }, { passive: false });
 
-  // ── Mouse move: show cursor and info ──
-  document.addEventListener('mousemove', () => {
-    showCursor();
-    showInfo();
-  });
-
-  // ── Click: toggle info bar ──
-  document.addEventListener('click', () => {
-    if (!guideOpen) showInfo();
-  });
+  document.addEventListener('mousemove', () => { showCursor(); showInfo(); });
+  document.addEventListener('click',     () => { if (!guideOpen) showInfo(); });
 
   // ============================================================
-  //  ▌ START
+  //  START
   // ============================================================
 
   init();
