@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PlexBEAST TV 0.2</title>
+  <title>PlexBEAST TV</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
@@ -531,6 +531,7 @@
   // ============================================================
 
   function loadStream(url) {
+    console.log(`[TV] Loading stream: ${url}`);
     noSignal.classList.remove('visible');
     buffering.classList.add('visible');
 
@@ -548,10 +549,16 @@
       hls.loadSource(url);
       hls.attachMedia(player);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('[TV] Manifest parsed — starting playback');
         buffering.classList.remove('visible');
-        player.play().catch(() => { player.muted = true; player.play(); });
+        player.play().catch(err => {
+          console.warn('[TV] Autoplay blocked, trying muted:', err);
+          player.muted = true;
+          player.play();
+        });
       });
       hls.on(Hls.Events.ERROR, (_, data) => {
+        console.error(`[TV] HLS error — type: ${data.type}, details: ${data.details}, fatal: ${data.fatal}`, data);
         if (data.fatal) {
           buffering.classList.remove('visible');
           noSignal.classList.add('visible');
