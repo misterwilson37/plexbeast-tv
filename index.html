@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PlexBEAST TV</title>
+  <title>PlexBEAST TV 0.2</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
@@ -399,14 +399,16 @@
 
   async function loadChannels() {
     try {
+      console.log(`[TV] Fetching channels from ${TUNARR_BASE}/api/channels`);
       const res = await fetch(`${TUNARR_BASE}/api/channels`);
+      console.log(`[TV] Channels response: HTTP ${res.status}`);
       if (!res.ok) return [];
       const data = await res.json();
+      console.log(`[TV] Channels loaded:`, data.map(c => `${c.number}: ${c.name} (${c.id})`));
       return data.map(ch => ({
         id:     ch.id,
         number: ch.number,
         name:   ch.name,
-        // ← Fixed stream URL format
         stream: `${TUNARR_BASE}/stream/channels/${ch.id}?streamMode=hls`
       })).sort((a, b) => a.number - b.number);
     } catch (e) {
