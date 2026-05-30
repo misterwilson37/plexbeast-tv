@@ -508,7 +508,7 @@
             id:     ch.id,
             number: ch.number,
             name:   ch.name,
-            stream: `${TUNARR_BASE}/stream/channel/${ch.number}.m3u8`
+            stream: `${TUNARR_BASE}/stream/channels/${ch.id}?streamMode=hls`
           })).sort((a, b) => a.number - b.number);
         }
       } catch (e) {
