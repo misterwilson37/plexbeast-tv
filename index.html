@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PlexBEAST TV</title>
+  <title>PlexBEAST TV 0.4</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
@@ -389,7 +389,9 @@
     channels = await loadChannels();
     if (channels.length === 0) { configNotice.classList.add('visible'); return; }
     buildGuide();
+    console.log('[TV] Guide built, calling tuneToIndex(0)');
     tuneToIndex(0, false);
+    console.log('[TV] tuneToIndex returned');
     showInfo();
   }
 
@@ -498,6 +500,7 @@
   // ============================================================
 
   function tuneToIndex(index, animate = true) {
+    console.log(`[TV] tuneToIndex(${index}), channels.length=${channels.length}`);
     currentIndex = ((index % channels.length) + channels.length) % channels.length;
     const ch = channels[currentIndex];
 
@@ -539,12 +542,14 @@
 
     if (Hls.isSupported()) {
       hls = new Hls({
-        liveSyncDurationCount: 3,
-        maxBufferLength: 30,
-        enableWorker: true,
-        // faster initial load for live streams
-        manifestLoadingTimeOut: 10000,
-        levelLoadingTimeOut:    10000,
+        liveSyncDurationCount:   3,
+        maxBufferLength:         30,
+        enableWorker:            true,
+        manifestLoadingTimeOut:  60000,  // 60s — Tunarr needs time to spin up
+        manifestLoadingMaxRetry: 5,
+        levelLoadingTimeOut:     60000,
+        levelLoadingMaxRetry:    5,
+        fragLoadingTimeOut:      30000,
       });
       hls.loadSource(url);
       hls.attachMedia(player);
